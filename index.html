@@ -369,6 +369,11 @@
     render();
   }
 
+  function closeDetail(){
+    selectedId = null;
+    render();
+  }
+
   document.getElementById("search").addEventListener("input", render);
   document.getElementById("sort").addEventListener("change", render);
 
@@ -463,6 +468,7 @@
         <div class="actions">
           <button class="btn small ghost" onclick="startEdit(${b.id})">編集</button>
           <button class="btn small danger" onclick="deleteBook(${b.id})">削除</button>
+          <button class="btn small ghost" onclick="closeDetail()">閉じる</button>
         </div>
       </div>
     `;
