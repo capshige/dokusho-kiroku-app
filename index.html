@@ -251,6 +251,7 @@
 
   <div class="toolbar">
     <input type="text" id="search" placeholder="タイトル・著者で検索">
+    <button class="btn small ghost" id="search-clear" style="display:none">× クリア</button>
     <select id="sort">
       <option value="date-desc">読んだ日：新しい順</option>
       <option value="date-asc">読んだ日：古い順</option>
@@ -385,7 +386,26 @@
     render();
   }
 
-  document.getElementById("search").addEventListener("input", render);
+  // ---- 検索 ----
+  const searchEl = document.getElementById("search");
+  const searchClearEl = document.getElementById("search-clear");
+
+  function updateSearchClear(){
+    searchClearEl.style.display = searchEl.value.trim() ? "inline-block" : "none";
+  }
+
+  searchEl.addEventListener("input", ()=>{
+    updateSearchClear();
+    render();
+  });
+
+  searchClearEl.addEventListener("click", ()=>{
+    searchEl.value = "";
+    updateSearchClear();
+    searchEl.focus();
+    render();
+  });
+
   document.getElementById("sort").addEventListener("change", render);
 
   function renderStats(){
