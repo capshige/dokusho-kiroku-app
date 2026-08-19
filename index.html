@@ -251,12 +251,14 @@
 
   <div class="toolbar">
     <input type="text" id="search" placeholder="タイトル・著者で検索">
+    <button class="btn small ghost" id="search-clear" style="display:none">× クリア</button>
     <select id="sort">
       <option value="date-desc">読んだ日：新しい順</option>
       <option value="date-asc">読んだ日：古い順</option>
       <option value="rating-desc">評価：高い順</option>
       <option value="rating-asc">評価：低い順</option>
     </select>
+    <button class="btn ghost small" id="export-csv-btn">CSVエクスポート</button>
   </div>
   <div class="shelf-label" id="count">本棚</div>
   <div class="shelf-hint" id="shelf-hint"></div>
@@ -385,8 +387,64 @@
     render();
   }
 
-  document.getElementById("search").addEventListener("input", render);
+  // ---- 検索 ----
+  const searchEl = document.getElementById("search");
+  const searchClearEl = document.getElementById("search-clear");
+
+  function updateSearchClear(){
+    searchClearEl.style.display = searchEl.value.trim() ? "inline-block" : "none";
+  }
+
+  searchEl.addEventListener("input", ()=>{
+    updateSearchClear();
+    render();
+  });
+
+  searchClearEl.addEventListener("click", ()=>{
+    searchEl.value = "";
+    updateSearchClear();
+    searchEl.focus();
+    render();
+  });
+
   document.getElementById("sort").addEventListener("change", render);
+
+  // ---- CSVエクスポート ----
+  function csvEscape(value){
+    const text = value === null || value === undefined ? "" : String(value);
+    if(/[",\n\r]/.test(text)) return `"${text.replace(/"/g, '""')}"`;
+    return text;
+  }
+
+  function booksToCsv(books){
+    const headers = ["タイトル", "著者", "読んだ日", "棚（カテゴリ）", "評価", "メモ・感想"];
+    const lines = [headers.map(csvEscape).join(",")];
+    books.forEach(b => {
+      lines.push([
+        b.title, b.author, b.date, b.category, b.rating, b.memo
+      ].map(csvEscape).join(","));
+    });
+    return lines.join("\r\n");
+  }
+
+  document.getElementById("export-csv-btn").addEventListener("click", async ()=>{
+    const books = await loadBooks();
+    if(books.length === 0){
+      alert("エクスポートする記録がありません");
+      return;
+    }
+    const csv = booksToCsv(books);
+    const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const today = new Date().toISOString().slice(0,10);
+    link.href = url;
+    link.download = `dokusho-kiroku_${today}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  });
 
   function renderStats(){
     const all = booksCache;
@@ -446,7 +504,7 @@
 
     if(books.length === 0){
       shelvesEl.innerHTML = "";
-      hint.textContent = "見つかりませんでした";
+      hint.textContent = "見つかりませんでした。";
       detailWrap.innerHTML = "";
       return;
     }
